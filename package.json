@@ -1,0 +1,27 @@
+{
+  "name": "solbot",
+  "version": "1.0.0",
+  "description": "Solana Wallet Bot",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ankur02Sarkar/SolBot.git"
+  },
+  "keywords": [
+    "Solana",
+    "Web3",
+    "Crypto"
+  ],
+  "author": "Ankur02Sarkar",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Ankur02Sarkar/SolBot/issues"
+  },
+  "homepage": "https://github.com/Ankur02Sarkar/SolBot#readme",
+  "dependencies": {
+    "@solana/web3.js": "^1.95.2"
+  }
+}
