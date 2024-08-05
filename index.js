@@ -1,6 +1,3 @@
-import express from "express";
-import bodyParser from "body-parser";
-import { config } from "dotenv";
 import TelegramBot from "node-telegram-bot-api";
 import {
   Connection,
@@ -15,15 +12,13 @@ import {
 import bip39 from "bip39";
 import { derivePath } from "ed25519-hd-key";
 import nacl from "tweetnacl";
-
-// Load environment variables from .env file
-config();
+import "dotenv/config";
 
 // Replace 'YOUR_TELEGRAM_BOT_TOKEN' with the token you received from BotFather
 const botToken = process.env.TELE_BOT_API;
 
 // Initialize the Telegram bot
-const bot = new TelegramBot(botToken, { polling: false });
+const bot = new TelegramBot(botToken, { polling: true });
 
 // In-memory storage for users and their wallet addresses and private key arrays
 const userWallets = new Map();
@@ -367,26 +362,4 @@ bot.on("callback_query", (callbackQuery) => {
     handleNetworkChoiceInput(chatId, data);
     bot.answerCallbackQuery(callbackQuery.id);
   }
-});
-
-// Express server setup for webhook
-const app = express();
-app.use(bodyParser.json());
-
-// Set the webhook URL
-const webhookUrl = "https://solbot-lyart.vercel.app/"; // Replace with your actual webhook URL
-
-// Configure your bot to use the webhook
-await bot.setWebHook(webhookUrl);
-
-// Handle incoming updates
-app.post("/webhook", (req, res) => {
-  bot.processUpdate(req.body);
-  res.sendStatus(200);
-});
-
-// Start the server
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`Server is listening on port ${port}`);
 });
