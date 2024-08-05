@@ -374,7 +374,7 @@ const app = express();
 app.use(bodyParser.json());
 
 // Set the webhook URL
-const webhookUrl = "https://solbotwebhook.vercel.app/"; // Replace with your actual webhook URL
+const webhookUrl = "https://solbot-lyart.vercel.app/"; // Replace with your actual webhook URL
 
 // Configure your bot to use the webhook
 await bot.setWebHook(webhookUrl);
