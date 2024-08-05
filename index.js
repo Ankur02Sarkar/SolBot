@@ -1,4 +1,6 @@
 import TelegramBot from "node-telegram-bot-api";
+import express from "express";
+import bodyParser from "body-parser";
 import {
   Connection,
   PublicKey,
@@ -17,14 +19,30 @@ import "dotenv/config";
 // Replace 'YOUR_TELEGRAM_BOT_TOKEN' with the token you received from BotFather
 const botToken = process.env.TELE_BOT_API;
 
-// Initialize the Telegram bot
-const bot = new TelegramBot(botToken, { polling: true });
+// Initialize the Telegram bot with no polling
+const bot = new TelegramBot(botToken);
+
+// Express app setup
+const app = express();
+app.use(bodyParser.json());
+
+// Your server URL, replace with the actual URL
+const serverUrl = process.env.SERVER_URL || "https://sol-bot.vercel.app";
+
+// Set the webhook
+bot.setWebHook(`${serverUrl}/bot${botToken}`);
 
 // In-memory storage for users and their wallet addresses and private key arrays
 const userWallets = new Map();
 const userPrivateKeys = new Map();
 const userStates = new Map();
 const transactionData = new Map();
+
+// Handle incoming webhook updates
+app.post(`/bot${botToken}`, (req, res) => {
+  bot.processUpdate(req.body);
+  res.sendStatus(200);
+});
 
 // Set up bot commands to appear in the Telegram menu
 bot.setMyCommands([
@@ -36,11 +54,6 @@ bot.setMyCommands([
   { command: "/stop", description: "Stop monitoring your wallet" },
   { command: "/help", description: "Show help message" },
 ]);
-
-// Replace 'YOUR_VERCEL_DEPLOYED_URL' with the actual URL of your deployed Vercel app.
-const webhookUrl = 'https://sol-bot-beta.vercel.app/api/telegram-bot';
-
-bot.setWebHook(webhookUrl);
 
 // Function to monitor transactions on a specific network
 async function monitorNetwork(networkName, userId, walletAddress) {
@@ -367,4 +380,10 @@ bot.on("callback_query", (callbackQuery) => {
     handleNetworkChoiceInput(chatId, data);
     bot.answerCallbackQuery(callbackQuery.id);
   }
+});
+
+// Start Express server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
