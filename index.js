@@ -25,6 +25,17 @@ const userPrivateKeys = new Map();
 const userStates = new Map();
 const transactionData = new Map();
 
+// Set up bot commands to appear in the Telegram menu
+bot.setMyCommands([
+  {
+    command: "/start",
+    description: "Start monitoring your Solana wallet address",
+  },
+  { command: "/send", description: "Send SOL to another address" },
+  { command: "/stop", description: "Stop monitoring your wallet" },
+  { command: "/help", description: "Show help message" },
+]);
+
 // Function to monitor transactions on a specific network
 async function monitorNetwork(networkName, userId, walletAddress) {
   try {
@@ -147,10 +158,17 @@ async function handleRecoveryPhraseInput(chatId, text) {
     }
     userPrivateKeys.set(chatId, privateKeyArray);
     userStates.set(chatId, "waiting_for_network_choice");
-    bot.sendMessage(
-      chatId,
-      "Enter the network number to use:\n1. Mainnet\n2. Devnet\n3. Testnet"
-    );
+    bot.sendMessage(chatId, "Enter the network number to use:", {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: "Mainnet", callback_data: "1" },
+            { text: "Devnet", callback_data: "2" },
+            { text: "Testnet", callback_data: "3" },
+          ],
+        ],
+      },
+    });
   } catch (error) {
     bot.sendMessage(chatId, "Invalid recovery phrase. Please try again.");
   }
@@ -166,7 +184,7 @@ function handleNetworkChoiceInput(chatId, text) {
 
   const chosenNetwork = networkMap[text];
   if (!chosenNetwork) {
-    bot.sendMessage(chatId, "Invalid choice. Please enter 1, 2, or 3.");
+    bot.sendMessage(chatId, "Invalid choice. Please select a valid network.");
     return;
   }
 
@@ -321,8 +339,26 @@ bot.onText(/\/send/, (msg) => {
     return;
   }
   userStates.set(chatId, "waiting_for_network_choice");
-  bot.sendMessage(
-    chatId,
-    "Enter the network number to use:\n1. Mainnet\n2. Devnet\n3. Testnet"
-  );
+  bot.sendMessage(chatId, "Enter the network number to use:", {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: "Mainnet", callback_data: "1" },
+          { text: "Devnet", callback_data: "2" },
+          { text: "Testnet", callback_data: "3" },
+        ],
+      ],
+    },
+  });
+});
+
+// Handle callback queries for inline buttons
+bot.on("callback_query", (callbackQuery) => {
+  const { message, data } = callbackQuery;
+  const chatId = message.chat.id;
+
+  if (userStates.get(chatId) === "waiting_for_network_choice") {
+    handleNetworkChoiceInput(chatId, data);
+    bot.answerCallbackQuery(callbackQuery.id);
+  }
 });
