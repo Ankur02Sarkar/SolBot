@@ -14,7 +14,7 @@ import { derivePath } from "ed25519-hd-key";
 import nacl from "tweetnacl";
 
 // Replace 'YOUR_TELEGRAM_BOT_TOKEN' with the token you received from BotFather
-const botToken = "";
+const botToken = process.env.TELE_BOT_API;
 
 // Initialize the Telegram bot
 const bot = new TelegramBot(botToken, { polling: true });
