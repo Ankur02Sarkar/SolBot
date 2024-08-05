@@ -37,6 +37,11 @@ bot.setMyCommands([
   { command: "/help", description: "Show help message" },
 ]);
 
+// Replace 'YOUR_VERCEL_DEPLOYED_URL' with the actual URL of your deployed Vercel app.
+const webhookUrl = 'https://sol-bot-beta.vercel.app/api/telegram-bot';
+
+bot.setWebHook(webhookUrl);
+
 // Function to monitor transactions on a specific network
 async function monitorNetwork(networkName, userId, walletAddress) {
   try {
