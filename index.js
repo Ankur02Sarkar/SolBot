@@ -27,7 +27,7 @@ const app = express();
 app.use(bodyParser.json());
 
 // Your server URL, replace with the actual URL
-const serverUrl = process.env.SERVER_URL || "https://sol-bot.vercel.app";
+const serverUrl = process.env.SERVER_URL || "https://solbot-q6bx.onrender.com";
 
 // Set the webhook
 bot.setWebHook(`${serverUrl}/bot${botToken}`);
@@ -329,7 +329,7 @@ bot.onText(/\/stop/, (msg) => {
 bot.onText(/\/help/, (msg) => {
   const chatId = msg.chat.id;
   const helpMessage = `
-Welcome to the Solana Wallet Monitor Bot!
+Welcome to the SolBot!
 
 Commands:
 /start - Start monitoring your Solana wallet address.
