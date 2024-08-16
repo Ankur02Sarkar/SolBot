@@ -27,7 +27,7 @@ const app = express();
 app.use(bodyParser.json());
 
 // Your server URL, replace with the actual URL
-const serverUrl = process.env.SERVER_URL || "https://solbot-q6bx.onrender.com";
+const serverUrl = process.env.SERVER_URL || "https://solbot-dev.onrender.com";
 
 // Set the webhook
 bot.setWebHook(`${serverUrl}/bot${botToken}`);
@@ -52,8 +52,14 @@ bot.setMyCommands([
   },
   { command: "/send", description: "Send SOL to another address" },
   { command: "/stop", description: "Stop monitoring your wallet" },
+  { command: "/view_wallets", description: "View currently monitored wallets" },
   { command: "/help", description: "Show help message" },
 ]);
+
+// Express route to show welcome message
+app.get("/", (req, res) => {
+  res.send("Welcome to the SolBot Server! Use the Telegram bot to interact with Solana blockchain.");
+});
 
 // Function to monitor transactions on a specific network
 async function monitorNetwork(networkName, userId, walletAddress) {
@@ -359,6 +365,22 @@ bot.onText(/\/stop/, (msg) => {
   }
 });
 
+// Command to view currently monitored wallets
+bot.onText(/\/view_wallets/, (msg) => {
+  const chatId = msg.chat.id;
+  if (userWallets.size === 0) {
+    bot.sendMessage(chatId, "No wallets are currently being monitored.");
+    return;
+  }
+
+  let walletsList = "Currently monitored wallets:\n";
+  userWallets.forEach((walletAddress, userId) => {
+    walletsList += `- User ID: ${userId}, Wallet Address: ${walletAddress}\n`;
+  });
+
+  bot.sendMessage(chatId, walletsList);
+});
+
 // Command to get help
 bot.onText(/\/help/, (msg) => {
   const chatId = msg.chat.id;
@@ -369,6 +391,7 @@ Commands:
 /start - Start monitoring your Solana wallet address.
 /send - Send SOL to another address.
 /stop - Stop monitoring your wallet.
+/view_wallets - View currently monitored wallets.
 /help - Show this help message.
 
 To start, send the /start command and then enter your Solana wallet address when prompted.
