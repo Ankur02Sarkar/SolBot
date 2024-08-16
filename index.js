@@ -17,7 +17,7 @@ import nacl from "tweetnacl";
 import "dotenv/config";
 
 // Replace 'YOUR_TELEGRAM_BOT_TOKEN' with the token you received from BotFather
-const botToken = process.env.TELEGRAM_TMP_TOKEN;
+const botToken = process.env.TELE_BOT_API;
 
 // Initialize the Telegram bot with no polling
 const bot = new TelegramBot(botToken);
@@ -58,7 +58,9 @@ bot.setMyCommands([
 
 // Express route to show welcome message
 app.get("/", (req, res) => {
-  res.send("Welcome to the SolBot Server! Use the Telegram bot to interact with Solana blockchain.");
+  res.send(
+    "Welcome to the SolBot Server! Use the Telegram bot to interact with Solana blockchain."
+  );
 });
 
 // Function to monitor transactions on a specific network
@@ -419,7 +421,7 @@ bot.onText(/\/send/, (msg) => {
         inline_keyboard: [
           [
             { text: "Secret Phrase", callback_data: "use_secret_phrase" },
-            { text: "Private Key", callback_data: "use_private_key" },
+            // { text: "Private Key", callback_data: "use_private_key" },
           ],
         ],
       },
