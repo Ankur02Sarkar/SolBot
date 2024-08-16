@@ -27,7 +27,7 @@ const app = express();
 app.use(bodyParser.json());
 
 // Your server URL, replace with the actual URL
-const serverUrl = process.env.SERVER_URL || "https://solbot-q6bx.onrender.com";
+const serverUrl = process.env.SERVER_URL || "https://solbot-dev.onrender.com";
 
 // Set the webhook
 bot.setWebHook(`${serverUrl}/bot${botToken}`);
@@ -52,8 +52,16 @@ bot.setMyCommands([
   },
   { command: "/send", description: "Send SOL to another address" },
   { command: "/stop", description: "Stop monitoring your wallet" },
+  { command: "/view_wallets", description: "View currently monitored wallets" },
   { command: "/help", description: "Show help message" },
 ]);
+
+// Express route to show welcome message
+app.get("/", (req, res) => {
+  res.send(
+    "Welcome to the SolBot Server! Use the Telegram bot to interact with Solana blockchain."
+  );
+});
 
 // Function to monitor transactions on a specific network
 async function monitorNetwork(networkName, userId, walletAddress) {
@@ -126,6 +134,10 @@ bot.on("message", async (msg) => {
       await handleRecoveryPhraseInput(chatId, text);
       break;
 
+    case "waiting_for_private_key":
+      handlePrivateKeyInput(chatId, text);
+      break;
+
     case "waiting_for_network_choice":
       handleNetworkChoiceInput(chatId, text);
       break;
@@ -190,6 +202,36 @@ async function handleRecoveryPhraseInput(chatId, text) {
     });
   } catch (error) {
     bot.sendMessage(chatId, "Invalid recovery phrase. Please try again.");
+  }
+}
+
+// Function to handle private key input
+function handlePrivateKeyInput(chatId, text) {
+  try {
+    const privateKeyArray = text
+      .split(",")
+      .map((num) => parseInt(num.trim(), 10)); // Assuming user enters the private key as comma-separated values
+    if (privateKeyArray.length !== 64) {
+      throw new Error(
+        "Invalid private key length. Please provide a valid private key."
+      );
+    }
+
+    userPrivateKeys.set(chatId, privateKeyArray);
+    userStates.set(chatId, "waiting_for_network_choice");
+    bot.sendMessage(chatId, "Enter the network number to use:", {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: "Mainnet", callback_data: "1" },
+            { text: "Devnet", callback_data: "2" },
+            { text: "Testnet", callback_data: "3" },
+          ],
+        ],
+      },
+    });
+  } catch (error) {
+    bot.sendMessage(chatId, "Invalid private key. Please try again.");
   }
 }
 
@@ -288,10 +330,10 @@ Solscan Link: ${solscanLink}
     console.error("Error sending SOL:", error);
     bot.sendMessage(
       chatId,
-      "Failed to send SOL. Please ensure you have enough balance and the addresses are correct. Please enter your recovery phrase again."
+      "Failed to send SOL. Please ensure you have enough balance and the addresses are correct. Please enter your recovery phrase or private key again."
     );
     userPrivateKeys.delete(chatId);
-    userStates.set(chatId, "waiting_for_recovery_phrase");
+    userStates.set(chatId, "waiting_for_key_choice");
   }
 }
 
@@ -325,6 +367,22 @@ bot.onText(/\/stop/, (msg) => {
   }
 });
 
+// Command to view currently monitored wallets
+bot.onText(/\/view_wallets/, (msg) => {
+  const chatId = msg.chat.id;
+  if (userWallets.size === 0) {
+    bot.sendMessage(chatId, "No wallets are currently being monitored.");
+    return;
+  }
+
+  let walletsList = "Currently monitored wallets:\n";
+  userWallets.forEach((walletAddress, userId) => {
+    walletsList += `- User ID: ${userId}, Wallet Address: ${walletAddress}\n`;
+  });
+
+  bot.sendMessage(chatId, walletsList);
+});
+
 // Command to get help
 bot.onText(/\/help/, (msg) => {
   const chatId = msg.chat.id;
@@ -335,6 +393,7 @@ Commands:
 /start - Start monitoring your Solana wallet address.
 /send - Send SOL to another address.
 /stop - Stop monitoring your wallet.
+/view_wallets - View currently monitored wallets.
 /help - Show this help message.
 
 To start, send the /start command and then enter your Solana wallet address when prompted.
@@ -352,29 +411,39 @@ bot.onText(/\/send/, (msg) => {
     );
     return;
   }
-  if (!userPrivateKeys.has(chatId)) {
-    userStates.set(chatId, "waiting_for_recovery_phrase");
-    bot.sendMessage(chatId, "Enter your secret recovery phrase:");
-    return;
-  }
-  userStates.set(chatId, "waiting_for_network_choice");
-  bot.sendMessage(chatId, "Enter the network number to use:", {
-    reply_markup: {
-      inline_keyboard: [
-        [
-          { text: "Mainnet", callback_data: "1" },
-          { text: "Devnet", callback_data: "2" },
-          { text: "Testnet", callback_data: "3" },
+
+  userStates.set(chatId, "waiting_for_key_choice");
+  bot.sendMessage(
+    chatId,
+    "Choose how you would like to sign the transaction:",
+    {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: "Secret Phrase", callback_data: "use_secret_phrase" },
+            // { text: "Private Key", callback_data: "use_private_key" },
+          ],
         ],
-      ],
-    },
-  });
+      },
+    }
+  );
 });
 
 // Handle callback queries for inline buttons
 bot.on("callback_query", (callbackQuery) => {
   const { message, data } = callbackQuery;
   const chatId = message.chat.id;
+
+  if (userStates.get(chatId) === "waiting_for_key_choice") {
+    if (data === "use_secret_phrase") {
+      userStates.set(chatId, "waiting_for_recovery_phrase");
+      bot.sendMessage(chatId, "Enter your secret recovery phrase:");
+    } else if (data === "use_private_key") {
+      userStates.set(chatId, "waiting_for_private_key");
+      bot.sendMessage(chatId, "Enter your private key:");
+    }
+    bot.answerCallbackQuery(callbackQuery.id);
+  }
 
   if (userStates.get(chatId) === "waiting_for_network_choice") {
     handleNetworkChoiceInput(chatId, data);
